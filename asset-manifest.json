@@ -1,6 +1,6 @@
 {
   "files": {
-    "main.js": "/piximi-beta/static/js/main.6201e37c.js",
+    "main.js": "/piximi-beta/static/js/main.e2dc396a.js",
     "static/js/12.a52bd582.chunk.js": "/piximi-beta/static/js/12.a52bd582.chunk.js",
     "static/js/361.5ef997bf.chunk.js": "/piximi-beta/static/js/361.5ef997bf.chunk.js",
     "static/js/692.c2396cc3.chunk.js": "/piximi-beta/static/js/692.c2396cc3.chunk.js",
@@ -44,10 +44,10 @@
     "static/media/VolumeOff.svg": "/piximi-beta/static/media/VolumeOff.1149786552b52a25580655f2ce3391c1.svg",
     "static/media/VolumeUp.svg": "/piximi-beta/static/media/VolumeUp.30de055e122b96e2aa207a710b1bd74a.svg",
     "static/media/Moon.svg": "/piximi-beta/static/media/Moon.593035e92f1f02f04668bb75454d1fb3.svg",
-    "main.6201e37c.js.map": "/piximi-beta/static/js/main.6201e37c.js.map",
+    "main.e2dc396a.js.map": "/piximi-beta/static/js/main.e2dc396a.js.map",
     "845.d9f7556a.chunk.js.map": "/piximi-beta/static/js/845.d9f7556a.chunk.js.map"
   },
   "entrypoints": [
-    "static/js/main.6201e37c.js"
+    "static/js/main.e2dc396a.js"
   ]
 }
