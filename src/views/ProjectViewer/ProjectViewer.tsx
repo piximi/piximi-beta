@@ -12,7 +12,7 @@ import { projectSlice } from "store/project";
 import { ProjectDrawer, ImageToolDrawer } from "components/drawers";
 import { FallBackDialog } from "components/dialogs";
 import { dimensions } from "utils/common/constants";
-import { CustomTabSwitcher } from "components/styled-components";
+import { InteractiveTabbedView } from "components/styled-components";
 import { ImageGrid } from "components/image-grids";
 import { ProjectAppBar } from "components/app-bars/";
 import { HotkeyView } from "utils/common/enums";
@@ -93,7 +93,7 @@ export const ProjectViewer = () => {
                 marginLeft: theme.spacing(32),
               })}
             >
-              <CustomTabSwitcher
+              <InteractiveTabbedView
                 childClassName="grid-tabs"
                 labels={visibleKinds}
                 secondaryEffect={handleTabChange}
@@ -103,7 +103,7 @@ export const ProjectViewer = () => {
                 {visibleKinds.map((kind) => (
                   <ImageGrid key={`${kind}-imageGrid`} kind={kind} />
                 ))}
-              </CustomTabSwitcher>
+              </InteractiveTabbedView>
             </Box>
             {process.env.NODE_ENV === "development" && <ImageToolDrawer />}
           </Box>
