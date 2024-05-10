@@ -49,14 +49,34 @@ export const createGitHubIssue = (
   window.open(url);
 };
 
+export enum LOG_LEVEL {
+  PRODUCTION,
+  NORMAL,
+  NORMAL_2,
+  TF_DEBUG,
+  TF_PREPROCESS,
+  IMJOY,
+}
+
+const check_level = () => {
+  const ENV = process.env.NODE_ENV;
+  const LEVEL = process.env.REACT_APP_LOG_LEVEL;
+  if (ENV === "production") return LOG_LEVEL.PRODUCTION;
+  if (LEVEL === "1") return LOG_LEVEL.NORMAL;
+  if (LEVEL === "2") return LOG_LEVEL.NORMAL_2;
+  if (LEVEL === "3") return LOG_LEVEL.TF_DEBUG;
+  if (LEVEL === "4") return LOG_LEVEL.TF_PREPROCESS;
+  if (LEVEL === "5") return LOG_LEVEL.IMJOY;
+};
+
 export const logger = (
   message: any | any[],
-  level: "log" | "warn" | "error" = "log"
+  priority: "log" | "warn" | "error" = "log"
 ) => {
   if (Array.isArray(message)) {
     message = message.join("");
   }
-  switch (level) {
+  switch (priority) {
     case "log":
       console.log(message);
       break;
@@ -68,6 +88,16 @@ export const logger = (
       break;
     default:
       break;
+  }
+};
+
+export const llog = (
+  message: any | any[],
+  level: LOG_LEVEL,
+  priority: "log" | "warn" | "error" = "log"
+) => {
+  if (check_level() === level) {
+    logger(message, priority);
   }
 };
 
