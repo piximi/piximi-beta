@@ -9902,10 +9902,10 @@ image-type@^4.1.0:
   dependencies:
     file-type "^10.10.0"
 
-imjoy-rpc@0.5.21:
-  version "0.5.21"
-  resolved "https://registry.yarnpkg.com/imjoy-rpc/-/imjoy-rpc-0.5.21.tgz#f35b53c3cef754b9d0e0719cbd2a5e7044941439"
-  integrity sha512-681W99kcc3DXgzHVHvEmkVOQ4FPZ1izwsQmBFx5BZT3QKwzbV+a3azd4oB6CfqfWqRpIVzizTgbuzuY/Vkn6yw==
+imjoy-rpc@0.5.48-post1:
+  version "0.5.48-post1"
+  resolved "https://registry.yarnpkg.com/imjoy-rpc/-/imjoy-rpc-0.5.48-post1.tgz#6e733a71e1d8bffc87ecadcf5db627994b5c505b"
+  integrity sha512-Jh2FNMpkseVcfww++TAp87lhgP3bByLuUu9KfhmJdmfGagtvDntXguWThHgxt7czBXqMnyJ71rjqgcSLrzk10g==
   dependencies:
     "@msgpack/msgpack" "^2.7.1"
     socket.io-client "^4.6.2"
