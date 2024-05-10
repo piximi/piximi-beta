@@ -110,7 +110,7 @@ export const ExampleProjectCard = ({
           new PseudoFileList([new File([blob], exampleProject.name, blob)])
       )
       .catch((err: any) => {
-        process.env.NODE_ENV === "production" &&
+        process.env.NODE_ENV !== "production" &&
           process.env.REACT_APP_LOG_LEVEL === "1" &&
           console.error(err);
         throw err;
