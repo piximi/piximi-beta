@@ -138,6 +138,65 @@ export const convertToTensor = (
 };
 
 /*
+ * creates an image tensor directly from raw float32 data
+ * allows reordering with permute argument
+ * e.g. if imageData is column-major and we want it to be
+ * major-order in the tensor
+ */
+export const dataToTensor = (
+  imageData: Float32Array,
+  shape: [number, number, number, number],
+  bitDepth: BitDepth,
+  permute: number[] | undefined
+) => {
+  const imageTensor = tidy("dataToTensor", () => {
+    const normScalar = scalar(2 ** bitDepth - 1);
+    return tensor4d(imageData, shape, "float32").div(normScalar);
+  });
+
+  let res = imageTensor;
+  if (permute !== undefined) {
+    res = imageTensor.transpose(permute);
+    imageTensor.dispose();
+  }
+
+  return res as Tensor4D;
+};
+
+export const dataToImage = async (
+  kind: string,
+  categoryId: string,
+  imageName: string,
+  imageData: Float32Array,
+  shape: [number, number, number, number],
+  bitDepth: BitDepth,
+  permute: number[] | undefined
+) => {
+  const activePlane = 0;
+  const imageTensor = dataToTensor(imageData, shape, bitDepth, permute);
+  const colors = await generateDefaultColors(imageTensor);
+  const dataURL = await createRenderedTensor(imageTensor, colors, bitDepth, 0);
+
+  const [planes, height, width, channels] = imageTensor.shape;
+
+  return {
+    kind,
+    activePlane: activePlane,
+    colors: colors,
+    bitDepth,
+    categoryId,
+    id: generateUUID(),
+    name: imageName,
+    shape: { planes, height, width, channels },
+    containing: [],
+    data: imageTensor,
+    partition: Partition.Inference,
+    src: dataURL,
+    visible: true,
+  } as ImageObject;
+};
+
+/*
   receive image of dims: [Z, H, W, C]
   get slice corresponding to given index
   return image slice with dims: [H, W, C]
