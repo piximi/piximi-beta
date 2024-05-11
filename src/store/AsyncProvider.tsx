@@ -177,7 +177,19 @@ const loadState = async () => {
 };
 
 const postStoreInit = async (store: EnhancedStore) => {
-  await createService(store);
+  let hypha_token = undefined;
+  let hypha_workspace = undefined;
+  const queries = window.location.search.slice(1).split("&");
+
+  queries.forEach((q) => {
+    const [k, v] = q.split("=");
+    if (k === "hypha_token") hypha_token = v;
+    if (k === "hypha_workspace") hypha_workspace = v;
+  });
+
+  if (hypha_token && hypha_workspace) {
+    await createService(store, hypha_token, hypha_workspace);
+  }
   return store;
 };
 
