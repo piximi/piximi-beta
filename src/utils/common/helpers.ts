@@ -91,13 +91,11 @@ export const logger = (
   }
 };
 
-export const llog = (
-  message: any | any[],
-  level: LOG_LEVEL,
-  priority: "log" | "warn" | "error" = "log"
-) => {
+export const llog = (level: LOG_LEVEL) => {
   if (check_level() === level) {
-    logger(message, priority);
+    return console.log;
+  } else {
+    return (...message: any[]) => {};
   }
 };
 
