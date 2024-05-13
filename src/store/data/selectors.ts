@@ -154,7 +154,7 @@ export const selectCategoriesByKind = createSelector(
 export const selectAllImageCategories = createSelector(
   selectAllCategories,
   (categories) => {
-    return categories.filter((category) => category.kind !== "Image");
+    return categories.filter((category) => category.kind === "Image");
   }
 );
 
