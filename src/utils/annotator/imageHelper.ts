@@ -14,6 +14,8 @@ import {
   Category,
   DecodedAnnotationObject,
   ImageObject,
+  Shape,
+  KindWithCategories,
 } from "store/data/types";
 
 export const generatePoints = (buffer: Array<number> | undefined) => {
@@ -570,4 +572,117 @@ export const saveAnnotationsAsLabelMatrix = async (
       zip.file(`${imCleanName}/${cat.name}.png`, imCatBlob, { base64: true });
     }
   }
+};
+
+export const annsToLabelMask = (
+  shape: Shape,
+  annotations: Array<DecodedAnnotationObject>,
+  kinds: Array<KindWithCategories>,
+  random: boolean = false,
+  binary: boolean = false
+) => {
+  // cat id -> cat name
+  const catIdMap = {} as { [internalCategoryId: string]: string };
+
+  // kind -> cat name -> annotations
+  const annIdMap = {} as {
+    [kind: string]: { [catName: string]: DecodedAnnotationObject[] };
+  };
+
+  for (const kind of kinds) {
+    if (!annIdMap.hasOwnProperty(kind.id)) {
+      annIdMap[kind.id] = {};
+    }
+
+    for (const cat of kind.categories) {
+      if (!annIdMap[kind.id].hasOwnProperty(cat.name)) {
+        annIdMap[kind.id][cat.name] = [];
+      }
+
+      if (!catIdMap.hasOwnProperty(cat.id)) {
+        catIdMap[cat.id] = cat.name;
+      }
+    }
+  }
+
+  for (const ann of annotations) {
+    const catName = catIdMap[ann.categoryId];
+    annIdMap[ann.kind][catName].push(ann);
+  }
+
+  const kindNames = Object.keys(annIdMap);
+
+  // kind -> cat name -> label mask raw
+  const resMap = {} as {
+    [kind: string]: { [catName: string]: ImageJS.DataArray };
+  };
+
+  for (const kind of kindNames) {
+    const kindCats = Object.keys(annIdMap[kind]);
+    for (const catName of kindCats) {
+      const kindCatAnns = annIdMap[kind][catName];
+
+      if (kindCatAnns.length === 0) continue;
+
+      const fullLabelImage = new ImageJS.Image(
+        shape.width,
+        shape.height,
+        new Uint8Array().fill(0),
+        { components: 1, alpha: 0 }
+      );
+
+      let r = binary ? 255 : 1;
+      let g = binary ? 255 : 1;
+      let b = binary ? 255 : 1;
+
+      for (const ann of kindCatAnns) {
+        if (random) {
+          r = Math.round(Math.random() * 255);
+          g = Math.round(Math.random() * 255);
+          b = Math.round(Math.random() * 255);
+        } else if (!binary) {
+          r = r + 1;
+          b = b + 1;
+          g = g + 1;
+        }
+
+        const decoded = ann.decodedMask;
+        const boundingBox = ann.boundingBox;
+        const endX = Math.min(shape.width, boundingBox[2]);
+        const endY = Math.min(shape.height, boundingBox[3]);
+
+        //extract bounding box params
+        const boundingBoxWidth = endX - boundingBox[0];
+        const boundingBoxHeight = endY - boundingBox[1];
+
+        const roiMask = new ImageJS.Image(
+          boundingBoxWidth,
+          boundingBoxHeight,
+          decoded,
+          {
+            components: 1,
+            alpha: 0,
+          }
+        );
+        for (let i = 0; i < boundingBoxWidth; i++) {
+          for (let j = 0; j < boundingBoxHeight; j++) {
+            if (roiMask.getPixelXY(i, j)[0] > 0) {
+              fullLabelImage.setPixelXY(
+                i + ann.boundingBox[0],
+                j + ann.boundingBox[1],
+                [r, g, b]
+              );
+            }
+          }
+        }
+      }
+
+      if (!resMap.hasOwnProperty(kind)) {
+        resMap[kind] = {};
+      }
+
+      resMap[kind][catName] = fullLabelImage.data;
+    }
+  }
+  return resMap;
 };
