@@ -1,6 +1,6 @@
 {
   "files": {
-    "main.js": "/static/js/main.44a27581.js",
+    "main.js": "/static/js/main.64a04592.js",
     "static/js/12.a52bd582.chunk.js": "/static/js/12.a52bd582.chunk.js",
     "static/js/361.5ef997bf.chunk.js": "/static/js/361.5ef997bf.chunk.js",
     "static/js/692.c2396cc3.chunk.js": "/static/js/692.c2396cc3.chunk.js",
@@ -13,6 +13,11 @@
     "static/media/BBBC013ExampleProject.zip": "/static/media/BBBC013ExampleProject.9b6398c28ccd215154d2.zip",
     "static/media/mnistExampleProject.zip": "/static/media/mnistExampleProject.c85f7210615b265f16a7.zip",
     "static/media/group1-shard1of2.bin": "/static/media/group1-shard1of2.33895c8f25a993d537ff.bin",
+    "static/media/group1-shard1of5.bin": "/static/media/group1-shard1of5.657346be67fcaed9ac30.bin",
+    "static/media/group1-shard2of5.bin": "/static/media/group1-shard2of5.76b59c474dd6c76c817c.bin",
+    "static/media/group1-shard3of5.bin": "/static/media/group1-shard3of5.ae04e4ec949d556958a8.bin",
+    "static/media/group1-shard4of5.bin": "/static/media/group1-shard4of5.7899b75e2b791fde0c17.bin",
+    "static/media/group1-shard5of5.bin": "/static/media/group1-shard5of5.25a375c760b645241947.bin",
     "static/media/malaria.png": "/static/media/malaria.5b73ad7591d4eef598db.png",
     "static/media/group1-shard2of2.bin": "/static/media/group1-shard2of2.09065811a29ecbc30998.bin",
     "static/media/cElegansExampleProjectIcon.png": "/static/media/cElegansExampleProjectIcon.ec038762b8385f2d59fd.png",
@@ -44,10 +49,10 @@
     "static/media/VolumeOff.svg": "/static/media/VolumeOff.1149786552b52a25580655f2ce3391c1.svg",
     "static/media/VolumeUp.svg": "/static/media/VolumeUp.30de055e122b96e2aa207a710b1bd74a.svg",
     "static/media/Moon.svg": "/static/media/Moon.593035e92f1f02f04668bb75454d1fb3.svg",
-    "main.44a27581.js.map": "/static/js/main.44a27581.js.map",
+    "main.64a04592.js.map": "/static/js/main.64a04592.js.map",
     "845.d9f7556a.chunk.js.map": "/static/js/845.d9f7556a.chunk.js.map"
   },
   "entrypoints": [
-    "static/js/main.44a27581.js"
+    "static/js/main.64a04592.js"
   ]
 }
