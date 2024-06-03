@@ -31,7 +31,7 @@ import {
 } from "./data/types";
 import { UNKNOWN_CATEGORY_NAME } from "./data/constants";
 import { measurementsSlice } from "./measurements/measurementsSlice";
-import { createService } from "utils/imjoy/hypha";
+import { createReceiveService } from "utils/imjoy/hypha";
 
 const loadState = async () => {
   const preloadedState: RootState = {
@@ -188,7 +188,7 @@ const postStoreInit = async (store: EnhancedStore) => {
   });
 
   if (hypha_token && hypha_workspace) {
-    await createService(store, hypha_token, hypha_workspace);
+    await createReceiveService(store, hypha_token, hypha_workspace);
   }
   return store;
 };

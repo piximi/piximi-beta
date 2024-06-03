@@ -3,6 +3,12 @@ import { DialogWithAction } from "../DialogWithAction";
 import { imageViewerSlice } from "store/imageViewer";
 import { dataSlice } from "store/data/dataSlice";
 import { selectActiveImageId } from "store/imageViewer/selectors";
+import {
+  selectActiveAnnotations,
+  selectActiveImage,
+  selectImageViewerActiveKindsWithFullCat,
+} from "store/imageViewer/reselectors";
+import { sendAnnotations } from "utils/imjoy/hypha";
 
 type ExitAnnotatorDialogProps = {
   onReturnToProject: () => void;
@@ -17,7 +23,12 @@ export const ExitAnnotatorDialog = ({
 }: ExitAnnotatorDialogProps) => {
   const dispatch = useDispatch();
 
+  const activeImage = useSelector(selectActiveImage);
   const activeImageId = useSelector(selectActiveImageId);
+  const activeImageAnnotations = useSelector(selectActiveAnnotations);
+  const activeKindsWithCats = useSelector(
+    selectImageViewerActiveKindsWithFullCat
+  );
 
   const onSaveChanges = () => {
     batch(() => {
@@ -30,6 +41,14 @@ export const ExitAnnotatorDialog = ({
       dispatch(dataSlice.actions.reconcile({ keepChanges: true }));
       dispatch(imageViewerSlice.actions.setImageStack({ imageIds: [] }));
     });
+
+    if (activeImage) {
+      sendAnnotations(
+        activeImage.shape,
+        activeImageAnnotations,
+        activeKindsWithCats
+      );
+    }
 
     onReturnToProject();
   };
