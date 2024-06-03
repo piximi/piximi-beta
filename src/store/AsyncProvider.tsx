@@ -1,4 +1,6 @@
 import React, { ReactElement, useEffect, useState } from "react";
+import { EnhancedStore } from "@reduxjs/toolkit";
+
 import { cellPaintingAnnotations } from "data/exampleImages";
 import colorImage from "images/cell-painting.png";
 import { RootState } from "./rootReducer";
@@ -29,6 +31,7 @@ import {
 } from "./data/types";
 import { UNKNOWN_CATEGORY_NAME } from "./data/constants";
 import { measurementsSlice } from "./measurements/measurementsSlice";
+import { createService } from "utils/imjoy/hypha";
 
 const loadState = async () => {
   const preloadedState: RootState = {
@@ -173,6 +176,11 @@ const loadState = async () => {
   return preloadedState;
 };
 
+const postStoreInit = async (store: EnhancedStore) => {
+  await createService(store);
+  return store;
+};
+
 export const AsyncProvider = ({
   children,
 }: {
@@ -180,22 +188,23 @@ export const AsyncProvider = ({
 }) => {
   const [preloaded, setPreloaded] = useState<{
     isReady: boolean;
-    state: RootState | undefined;
-  }>({ isReady: false, state: undefined });
+    store: EnhancedStore | undefined;
+  }>({ isReady: false, store: undefined });
 
   useEffect(() => {
     loadState()
-      .then((state: RootState) => {
-        setPreloaded({ isReady: true, state });
-      })
+      .then((state: RootState) => initStore(state))
+      // do post-store initilization async work here
+      .then((store: EnhancedStore) => postStoreInit(store))
+      .then((store: EnhancedStore) => setPreloaded({ isReady: true, store }))
       .catch(() => {
         logger("Failed to load preloaded state");
-        setPreloaded({ isReady: true, state: undefined });
+        setPreloaded({ isReady: true, store: undefined });
       });
   }, [setPreloaded]);
 
   return preloaded.isReady ? (
-    <Provider store={initStore(preloaded.state)}>{children}</Provider>
+    <Provider store={preloaded.store!}>{children}</Provider>
   ) : (
     <></>
   );
