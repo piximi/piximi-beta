@@ -169,6 +169,7 @@ const loadState = async () => {
       annotation.id
     );
   }
+  preloadedState.project = { ...preloadedState.project, imageChannels: 3 };
   preloadedState.data = { kinds, categories, things };
   return preloadedState;
 };
