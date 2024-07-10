@@ -156,6 +156,7 @@ const _serializeProject = async (
   loadCb: LoadCB
 ) => {
   await projectGroup.attrs.setItem("name", project.name);
+  await projectGroup.attrs.setItem("channels", project.imageChannels);
 
   const thingsGroup = await projectGroup.createGroup("things");
 

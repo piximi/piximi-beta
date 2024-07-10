@@ -71,7 +71,6 @@ const deserializeThingGroup = async (
       channels,
     },
   };
-
   if (kind === "Image") {
     const colorsGroup = await getGroup(thingGroup, "colors");
     const colors = await deserializeColorsGroup(colorsGroup);
@@ -226,6 +225,7 @@ const deserializeProjectGroup = async (
   };
 }> => {
   const name = (await getAttr(projectGroup, "name")) as string;
+  const channels = (await getAttr(projectGroup, "channels")) as number;
 
   const thingsGroup = await getGroup(projectGroup, "things");
   const things = await deserializeThingsGroup(thingsGroup, loadCb);
@@ -238,6 +238,7 @@ const deserializeProjectGroup = async (
     project: {
       ...initialProjectState,
       name,
+      imageChannels: channels,
     },
     data: { things, kinds, categories },
   };
