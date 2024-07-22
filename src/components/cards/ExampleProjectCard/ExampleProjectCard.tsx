@@ -77,7 +77,7 @@ export const ExampleProjectCard = ({
         break;
       case ExampleProject.HumanU2OSCells:
         exampleProjectFilePath =
-          process.env.NODE_ENV !== "production"
+          process.env.NODE_ENV === "production"
             ? `${domain}/${rootPath}/HumanU2OSCellsExampleProject.${ext}`
             : (
                 await import(
@@ -134,14 +134,12 @@ export const ExampleProjectCard = ({
         // loadPercent will be set to 1 here
         dispatch(dataSlice.actions.initializeState({ data }));
         dispatch(projectSlice.actions.setProject({ project }));
-
+        dispatch(classifierSlice.actions.setDefaults({}));
         dispatch(
           classifierSlice.actions.setClassifier({
             classifier,
           })
         );
-
-        dispatch(classifierSlice.actions.setDefaults({}));
       });
     } catch (err) {
       const error: Error = err as Error;
