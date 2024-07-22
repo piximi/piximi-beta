@@ -2,7 +2,7 @@ import React, { useEffect, useCallback, useState, useRef } from "react";
 import Konva from "konva";
 import { useDispatch, useSelector } from "react-redux";
 import { ErrorBoundary } from "react-error-boundary";
-import { AppBar, Box, CssBaseline } from "@mui/material";
+import { AppBar, Box } from "@mui/material";
 
 import { useMobileView, useUpload } from "hooks";
 
@@ -136,7 +136,6 @@ export const ImageViewer = () => {
             </AppBar>
           )}
 
-          <CssBaseline />
           {isMobile ? <></> : <ImageViewerDrawer />}
 
           <StageWrapper

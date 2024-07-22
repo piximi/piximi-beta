@@ -25,14 +25,12 @@ import { Category } from "store/data/types";
 import {
   selectActiveCategories,
   selectActiveSelectedThingIds,
-  selectActiveUnknownCategory,
 } from "store/project/reselectors";
 import { selectClassifierModelStatus } from "store/classifier/selectors";
 
 export const CategoriesList = () => {
   const dispatch = useDispatch();
   const categories = useSelector(selectActiveCategories);
-  const activeUnknownCategory = useSelector(selectActiveUnknownCategory);
   const activeKind = useSelector(selectActiveKindId);
   const [selectedCategory, setSelectedCategory] = useState<Category>();
   const [categoryIndex, setCategoryIndex] = useState("");
@@ -201,13 +199,15 @@ export const CategoriesList = () => {
           }
         />
       </List>
+      {selectedCategory && (
+        <CategoryItemMenu
+          anchorElCategoryMenu={categoryMenuAnchorEl}
+          category={selectedCategory}
+          handleCloseCategoryMenu={onCloseCategoryMenu}
+          openCategoryMenu={Boolean(categoryMenuAnchorEl)}
+        />
+      )}
 
-      <CategoryItemMenu
-        anchorElCategoryMenu={categoryMenuAnchorEl}
-        category={selectedCategory ?? activeUnknownCategory}
-        handleCloseCategoryMenu={onCloseCategoryMenu}
-        openCategoryMenu={Boolean(categoryMenuAnchorEl)}
-      />
       <CreateCategoryDialog
         kind={activeKind}
         onClose={handleCloseCreateCategoryDialog}
