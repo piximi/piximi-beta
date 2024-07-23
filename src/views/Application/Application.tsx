@@ -47,6 +47,7 @@ export const Application = () => {
     });
 
     dispatch(dataSlice.actions.initializeState({ data: dataState }));
+
     dispatch(projectSlice.actions.setProjectImageChannels({ channels: 3 }));
     setHasLoaded(true);
   }, [dispatch]);
