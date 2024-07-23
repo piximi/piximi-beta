@@ -31,6 +31,11 @@ export const deserializeProject = async (
       annotationCategories: data.annotationCategories,
       oldCategories: data.categories,
     });
+    if (Object.values(things.entities).length > 0) {
+      project.imageChannels = Object.values(
+        things.entities
+      )[0].saved.shape.channels;
+    }
     return {
       project,
       classifier,

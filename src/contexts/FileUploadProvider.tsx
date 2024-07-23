@@ -1,0 +1,473 @@
+import * as ImageJS from "image-js";
+import {
+  createContext,
+  FormEvent,
+  ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { applicationSettingsSlice } from "store/applicationSettings";
+import { dataSlice } from "store/data";
+
+import { selectUnknownImageCategory } from "store/data/selectors";
+import { MIMETYPES } from "utils/file-io/constants";
+import { ImageShapeEnum } from "utils/file-io/enums";
+import {
+  decodeDicomImage,
+  forceStack,
+  getImageInformation,
+} from "utils/file-io/helpers";
+import {
+  ImageFileShapeInfo,
+  ImageShapeInfo,
+  MIMEType,
+} from "utils/file-io/types";
+import { updateRecord } from "utils/common/helpers";
+import { AlertType } from "utils/common/enums";
+import {
+  Box,
+  FormControl,
+  MenuItem,
+  Select,
+  SelectChangeEvent,
+  TextField,
+  Typography,
+} from "@mui/material";
+import { convertToImage } from "utils/common/tensorHelpers";
+import { ImageObject } from "store/data/types";
+import {
+  selectActiveKindId,
+  selectHighlightedCategory,
+  selectProjectImageChannels,
+} from "store/project/selectors";
+import { projectSlice } from "store/project";
+import { DialogWithAction } from "components/dialogs";
+
+type ImageShapeInfoImage = ImageFileShapeInfo & {
+  fileName: string;
+  image?: ImageJS.Stack;
+  error?: string;
+};
+
+const FileUploadContext = createContext<
+  ((files: FileList) => Promise<void>) | null
+>(null);
+
+const minChannels = 1;
+
+const getUploadedFileTypes = async (files: FileList) => {
+  const images: Record<number, Array<ImageShapeInfoImage>> = {};
+  for (const file of files) {
+    const ext = file.type as MIMEType;
+    try {
+      // https://stackoverflow.com/questions/56565528/typescript-const-assertions-how-to-use-array-prototype-includes
+      if (!(MIMETYPES as ReadonlyArray<string>).includes(file.type)) {
+        process.env.NODE_ENV !== "production" &&
+          console.error("Invalid MIME Type:", ext);
+        updateRecord(images, ImageShapeEnum.InvalidImage, {
+          shape: ImageShapeEnum.InvalidImage,
+          fileName: file.name,
+          ext,
+          error: `Invalid MIME Type: ${ext}`,
+        });
+      }
+
+      if (
+        file.name.endsWith("dcm") ||
+        file.name.endsWith("DICOM") ||
+        file.name.endsWith("DCM")
+      ) {
+        const image = await decodeDicomImage(file);
+
+        updateRecord(images, ImageShapeEnum.DicomImage, {
+          shape: ImageShapeEnum.DicomImage,
+          components: image.length,
+          fileName: file.name,
+          ext: "image/dicom",
+          image,
+        });
+      } else {
+        const buffer = await file.arrayBuffer();
+        const image: ImageJS.Image | ImageJS.Stack = await ImageJS.Image.load(
+          buffer,
+          {
+            ignorePalette: true,
+          }
+        );
+
+        const imageInfo = getImageInformation(image);
+
+        const imageStack = await forceStack(image);
+
+        updateRecord(images, imageInfo.shape, {
+          ...imageInfo,
+          ext,
+          image: imageStack,
+          fileName: file.name,
+        });
+      }
+    } catch (err) {
+      const error = err as Error;
+      updateRecord(images, ImageShapeEnum.InvalidImage, {
+        shape: ImageShapeEnum.InvalidImage,
+        fileName: file.name,
+        ext,
+        error: `Could not parse image file. -- ${error.message}`,
+      });
+    }
+  }
+  return images;
+};
+
+export function FileUploadProvider({ children }: { children: ReactNode }) {
+  const dispatch = useDispatch();
+  const kind = useSelector(selectActiveKindId);
+  const projectChannels = useSelector(selectProjectImageChannels);
+  const selectedCategory = useSelector(selectHighlightedCategory);
+  const unknownCategory = useSelector(selectUnknownImageCategory);
+
+  const [fileInfo, setFileInfo] = useState<
+    Record<number, ImageShapeInfoImage[]>
+  >({});
+  const [openDimensionsDialogBox, setOpenDimensionsDialogBox] = useState(false);
+  const [channelOptions, setChannelOptions] = useState<number[]>();
+  const [numChannels, setNumChannels] = useState<number | undefined>(
+    projectChannels
+  );
+  const [uploadPromptMessage, setUploadPromptMessage] = useState<string>("");
+
+  const [startUpload, setStartUpload] = useState<boolean>(false);
+  const [referenceHyperStack, setReferenceHyperStack] =
+    useState<ImageShapeInfoImage>();
+
+  const uploadFiles = async (files: FileList) => {
+    setChannelOptions(undefined);
+
+    const imageInfo = await getUploadedFileTypes(files);
+
+    setFileInfo(imageInfo);
+    if (!numChannels) {
+      if (
+        (ImageShapeEnum.DicomImage in imageInfo ||
+          ImageShapeEnum.GreyScale in imageInfo) &&
+        ImageShapeEnum.SingleRGBImage in imageInfo
+      ) {
+        setUploadPromptMessage(
+          "Your files contain both 3-channel and greyscale images, but channels across images must be uniform. Which would you like to use?"
+        );
+        setChannelOptions([
+          imageInfo[ImageShapeEnum.GreyScale][0].components!,
+          imageInfo[ImageShapeEnum.SingleRGBImage][0].components!,
+        ]);
+        setOpenDimensionsDialogBox(true);
+      } else if (ImageShapeEnum.GreyScale in imageInfo) {
+        updateChannels(imageInfo![ImageShapeEnum.GreyScale]![0].components!);
+      } else if (ImageShapeEnum.DicomImage in imageInfo) {
+        updateChannels(1);
+      } else if (ImageShapeEnum.SingleRGBImage in imageInfo) {
+        updateChannels(imageInfo[ImageShapeEnum.SingleRGBImage][0].components!);
+      } else if (ImageShapeEnum.HyperStackImage in imageInfo) {
+        setUploadPromptMessage("How many channels do your images consist of?");
+        setReferenceHyperStack(imageInfo[ImageShapeEnum.HyperStackImage][0]);
+        setOpenDimensionsDialogBox(true);
+      } else if (ImageShapeEnum.InvalidImage in imageInfo) {
+        const errors = imageInfo[ImageShapeEnum.InvalidImage].map(
+          (info) => `${info.fileName} -- ${info.error}`
+        );
+
+        if (errors.length > 0) {
+          dispatch(
+            applicationSettingsSlice.actions.updateAlertState({
+              alertState: {
+                alertType: AlertType.Error,
+                name: "File Upload Error",
+                description: [...errors].join("\n---\n"),
+              },
+            })
+          );
+        }
+      }
+    } else {
+      setStartUpload(true);
+    }
+  };
+
+  const handleCloseDimensionsDialog = () => {
+    setUploadPromptMessage("");
+    setOpenDimensionsDialogBox(false);
+    setChannelOptions(undefined);
+  };
+
+  const updateChannels = (channels: number) => {
+    dispatch(projectSlice.actions.setProjectImageChannels({ channels }));
+    setNumChannels(channels);
+    setStartUpload(true);
+  };
+
+  useEffect(() => {
+    const errors: string[] = [];
+    if (fileInfo[ImageShapeEnum.InvalidImage]) {
+      errors.push(
+        ...fileInfo[ImageShapeEnum.InvalidImage].map(
+          (info) => `${info.fileName} -- ${info.error}`
+        )
+      );
+    }
+
+    const uploadImages = async () => {
+      delete fileInfo[ImageShapeEnum.InvalidImage];
+      const uploadedFiles = Object.values(fileInfo).flat();
+
+      const convertedImages: ImageObject[] = [];
+      for await (const fileInfo of uploadedFiles) {
+        if (
+          fileInfo.ext !== "image/dicom" &&
+          fileInfo.components! !== numChannels &&
+          fileInfo.components! <= 3
+        ) {
+          errors.push(
+            `${
+              fileInfo.fileName
+            } -- All images in project must be ${numChannels}-channel, recieved ${fileInfo.components!}-channel image.`
+          );
+          continue;
+        }
+        if (!fileInfo.image) {
+          continue;
+        }
+        if (
+          !(
+            fileInfo.image![0].bitDepth === 8 ||
+            fileInfo.image![0].bitDepth === 16
+          )
+        ) {
+          errors.push(
+            `${fileInfo.fileName} -- Unsupported bit depth of ${
+              fileInfo.image![0].bitDepth
+            }`
+          );
+
+          continue;
+        }
+        try {
+          const imageToUpload = await convertToImage(
+            fileInfo.image!,
+            fileInfo.fileName,
+            undefined,
+            fileInfo.components! / numChannels!,
+            numChannels!
+          );
+          imageToUpload.categoryId = selectedCategory ?? unknownCategory;
+          imageToUpload.kind = kind;
+
+          convertedImages.push(imageToUpload);
+        } catch (err) {
+          const error = err as Error;
+          errors.push(
+            `Error converting ${fileInfo.fileName}: ${error.message}`
+          );
+        }
+      }
+      if (convertedImages.length > 0) {
+        dispatch(
+          dataSlice.actions.addThings({
+            things: convertedImages,
+            isPermanent: true,
+          })
+        );
+      }
+      if (errors.length > 0) {
+        dispatch(
+          applicationSettingsSlice.actions.updateAlertState({
+            alertState: {
+              alertType: AlertType.Error,
+              name: "File Upload Error",
+              description: [...errors].join("\n---\n"),
+            },
+          })
+        );
+      }
+    };
+    if (startUpload) {
+      uploadImages();
+      setStartUpload(false);
+    }
+  }, [
+    startUpload,
+    dispatch,
+    fileInfo,
+    selectedCategory,
+    unknownCategory,
+    numChannels,
+    kind,
+  ]);
+
+  useEffect(() => {
+    setNumChannels(projectChannels);
+  }, [projectChannels]);
+
+  return (
+    <>
+      <FileUploadContext.Provider value={uploadFiles}>
+        {children}
+        {openDimensionsDialogBox && (
+          <ImageShapeDialog
+            channelOptions={channelOptions}
+            promptMessage={uploadPromptMessage}
+            referenceHyperStack={referenceHyperStack}
+            open={openDimensionsDialogBox}
+            onClose={handleCloseDimensionsDialog}
+            onConfirm={updateChannels}
+          />
+        )}
+      </FileUploadContext.Provider>
+    </>
+  );
+}
+
+type ImageShapeDialogProps = {
+  channelOptions?: number[];
+  promptMessage: string;
+  referenceHyperStack?: ImageShapeInfoImage;
+  open: boolean;
+  onClose: () => void;
+  onConfirm: (channels: number) => void;
+  referenceImageShape?: ImageShapeInfo;
+};
+
+const ImageShapeDialog = ({
+  channelOptions,
+  promptMessage,
+  referenceHyperStack,
+  open,
+  onConfirm,
+  onClose,
+}: ImageShapeDialogProps) => {
+  const [channels, setChannels] = useState<number>(
+    channelOptions ? channelOptions[0] : 1
+  );
+  const [channelsString, setChannelsString] = useState<string>(
+    channels.toString()
+  );
+  const [frames, setFrames] = useState<number>(-1);
+
+  const [invalidImageShape, setInvalidImageShape] = useState<boolean>(false);
+
+  const [errorHelpText, setErrorHelpText] = useState<string>(" ");
+
+  const handleSelectChange = (event: SelectChangeEvent) => {
+    setChannels(+event.target.value);
+  };
+
+  const onTextFieldChange = (event: FormEvent<EventTarget>) => {
+    const target = event.target as HTMLInputElement;
+    const inputString = target.value;
+    setChannelsString(inputString);
+    const _channels = Number(inputString);
+    if (target.value === "" || isNaN(_channels) || _channels < minChannels) {
+      setErrorHelpText(`Must be an integer greater than 0`);
+      setInvalidImageShape(true);
+      return;
+    }
+
+    if (referenceHyperStack) {
+      const slices = referenceHyperStack!.components! / _channels;
+      if (!Number.isInteger(slices)) {
+        setErrorHelpText(
+          `Invalid Image Shape: Cannot create a ${_channels} (c) x ${(
+            frames / _channels
+          ).toFixed(2)} (z) image from file.`
+        );
+        setInvalidImageShape(true);
+        return;
+      }
+      setInvalidImageShape(false);
+    }
+
+    setErrorHelpText(" ");
+    setInvalidImageShape(false);
+    setChannels(_channels);
+  };
+
+  useEffect(() => {
+    setChannelsString(channels.toString());
+  }, [channels]);
+
+  useEffect(() => {
+    if (referenceHyperStack) {
+      const imageFrames = referenceHyperStack.components!;
+      setFrames(imageFrames);
+    }
+  }, [referenceHyperStack]);
+
+  return (
+    <DialogWithAction
+      title={"Select Channels"}
+      isOpen={open}
+      content={
+        <Box sx={{ display: "flex", flexDirection: "column" }}>
+          <Typography>{promptMessage}</Typography>
+          {channelOptions ? (
+            <Box sx={{ pt: 1 }}>
+              <FormControl size="small" sx={{ width: "15ch", py: "20px" }}>
+                <Select value={"" + channels} onChange={handleSelectChange}>
+                  {channelOptions.map((channel) => {
+                    return (
+                      <MenuItem key={`channel-${channel}`} value={channel}>
+                        {channel}
+                      </MenuItem>
+                    );
+                  })}
+                </Select>
+              </FormControl>
+            </Box>
+          ) : (
+            <Box sx={{ pt: 2, pb: 0 }}>
+              <FormControl size="small" sx={{ width: "15ch", py: "20px" }}>
+                <TextField
+                  id="channels-c"
+                  label="Channels"
+                  error={invalidImageShape}
+                  value={channelsString}
+                  onChange={onTextFieldChange}
+                  type="text"
+                  margin="normal"
+                  autoComplete="off"
+                  size="small"
+                />
+              </FormControl>
+              <Box
+                width="100%"
+                display="flex"
+                justifyContent="center"
+                height="2em"
+                alignContent="center"
+              >
+                {invalidImageShape && (
+                  <Typography
+                    variant="body2"
+                    sx={(theme) => ({ color: theme.palette.error.main })}
+                  >
+                    {errorHelpText}
+                  </Typography>
+                )}
+              </Box>
+            </Box>
+          )}
+        </Box>
+      }
+      onConfirm={() => {
+        onConfirm(channels);
+      }}
+      onClose={() => {
+        onClose();
+      }}
+    />
+  );
+};
+
+export function useFileUploadContext() {
+  return useContext(FileUploadContext);
+}
