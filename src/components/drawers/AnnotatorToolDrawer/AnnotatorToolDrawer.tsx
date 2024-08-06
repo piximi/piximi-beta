@@ -14,14 +14,14 @@ import {
   LockOpen as LockOpenIcon,
 } from "@mui/icons-material";
 
-import { useHotkeys, useTranslation } from "hooks";
+import { useAnnotatorToolShortcuts, useHotkeys, useTranslation } from "hooks";
 
 import { Tool } from "../../stage/Tool";
 
 import { annotatorSlice } from "store/annotator";
 import { selectToolType } from "store/annotator/selectors";
 
-import { HotkeyView } from "utils/common/enums";
+import { HotkeyContext } from "utils/common/enums";
 import { ToolType as OperationType } from "utils/annotator/enums";
 
 import {
@@ -115,12 +115,14 @@ export const AnnotatorToolDrawer = ({
     setPersistOptions((visible) => !visible);
   };
 
+  useAnnotatorToolShortcuts();
   useHotkeys(
     "shift+o",
     () => {
       togglePersistHandler();
     },
-    HotkeyView.Annotator
+    HotkeyContext.AnnotatorView,
+    [persistOptions]
   );
   const t = useTranslation();
 

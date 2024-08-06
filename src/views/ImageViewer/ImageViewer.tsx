@@ -18,14 +18,14 @@ import { StageContext } from "contexts";
 import { AnnotatorToolDrawer } from "components/drawers";
 import { APPLICATION_COLORS } from "utils/common/constants";
 import { getStackTraceFromError } from "utils/common/helpers";
-import { AlertType, HotkeyView } from "utils/common/enums";
+import { AlertType, HotkeyContext } from "utils/common/enums";
 import { selectAlertState } from "store/applicationSettings/selectors";
 
 export const ImageViewer = () => {
   const dispatch = useDispatch();
   const stageRef = useRef<Konva.Stage>(null);
 
-  const [optionsVisible, setOptionsVisibile] = useState<boolean>(true);
+  const [optionsVisible, setOptionsVisibile] = useState<boolean>(false);
   const [persistOptions, setPersistOptions] = useState<boolean>(false);
   const isMobile = useMobileView();
   const alertState = useSelector(selectAlertState);
@@ -83,12 +83,16 @@ export const ImageViewer = () => {
   }, []);
   useEffect(() => {
     dispatch(
-      applicationSettingsSlice.actions.registerHotkeyView({
-        hotkeyView: HotkeyView.Annotator,
+      applicationSettingsSlice.actions.registerHotkeyContext({
+        context: HotkeyContext.AnnotatorView,
       })
     );
     return () => {
-      dispatch(applicationSettingsSlice.actions.unregisterHotkeyView({}));
+      dispatch(
+        applicationSettingsSlice.actions.unregisterHotkeyContext({
+          context: HotkeyContext.AnnotatorView,
+        })
+      );
     };
   }, [dispatch]);
 

@@ -6,7 +6,7 @@ import { Delete as DeleteIcon, Add as AddIcon } from "@mui/icons-material";
 
 import { useDialogHotkey, useHotkeys } from "hooks";
 
-import { DialogWithAction } from "components/dialogs";
+import { ConfirmationDialog } from "components/dialogs";
 
 import { CustomListItemButton } from "components/list-items";
 import { useDispatch, useSelector } from "react-redux";
@@ -15,12 +15,12 @@ import { CategoryItemMenu } from "components/menus";
 import { projectSlice } from "store/project";
 import { selectHighlightedCategory } from "store/project/selectors";
 import { selectActiveKindId } from "store/project/selectors";
-import { CreateCategoryDialog } from "components/dialogs/CreateCategoryDialog/CreateCategoryDialog";
+import { CreateCategoryDialog } from "components/dialogs";
 import { dataSlice } from "store/data/dataSlice";
 import { PredictionListItems } from "components/list-items";
 import { isUnknownCategory } from "utils/common/helpers";
 import { ModelStatus, Partition } from "utils/models/enums";
-import { HotkeyView } from "utils/common/enums";
+import { HotkeyContext } from "utils/common/enums";
 import { Category } from "store/data/types";
 import {
   selectActiveCategories,
@@ -35,6 +35,8 @@ export const CategoriesList = () => {
 
   const [selectedCategory, setSelectedCategory] = useState<Category>();
   const [categoryIndex, setCategoryIndex] = useState("");
+  const [showHK, setShowHK] = useState(false);
+
   const highlightedCategory = useSelector(selectHighlightedCategory);
 
   const modelStatus = useSelector(selectClassifierModelStatus);
@@ -47,13 +49,13 @@ export const CategoriesList = () => {
     onClose: handleCloseCreateCategoryDialog,
     onOpen: handleOpenCreateCategoryDialog,
     open: isCreateCategoryDialogOpen,
-  } = useDialogHotkey(HotkeyView.DialogWithAction);
+  } = useDialogHotkey(HotkeyContext.ConfirmationDialog);
 
   const {
     onClose: handleCloseDeleteCategoryDialog,
     onOpen: handleOpenDeleteCategoryDialog,
     open: isDeleteCategoryDialogOpen,
-  } = useDialogHotkey(HotkeyView.DialogWithAction);
+  } = useDialogHotkey(HotkeyContext.ConfirmationDialog);
 
   const selectCategory = useCallback(
     (category: Category) => {
@@ -98,7 +100,7 @@ export const CategoriesList = () => {
         });
       }
     },
-    [HotkeyView.Annotator, HotkeyView.ProjectView],
+    [HotkeyContext.ProjectView],
 
     []
   );
@@ -112,13 +114,14 @@ export const CategoriesList = () => {
         });
       }
     },
-    [HotkeyView.ProjectView],
+    [HotkeyContext.ProjectView],
     []
   );
 
   useHotkeys(
     "shift",
     () => {
+      setShowHK(false);
       if (
         categoryIndex.length !== 0 &&
         !Number.isNaN(+categoryIndex) &&
@@ -130,24 +133,34 @@ export const CategoriesList = () => {
           })
         );
         setSelectedCategory(categories[+categoryIndex]);
-      }
-      if (selectedImageIds.length > 0) {
-        dispatch(
-          dataSlice.actions.updateThings({
-            updates: selectedImageIds.map((imageId) => ({
-              id: imageId,
-              categoryId: highlightedCategory,
-              partition: Partition.Unassigned,
-            })),
-            isPermanent: true,
-          })
-        );
+        if (selectedImageIds.length > 0) {
+          dispatch(
+            dataSlice.actions.updateThings({
+              updates: selectedImageIds.map((imageId) => ({
+                id: imageId,
+                categoryId: highlightedCategory,
+                partition: Partition.Unassigned,
+              })),
+              isPermanent: true,
+            })
+          );
+        }
       }
 
       setCategoryIndex("");
     },
-    [HotkeyView.Annotator, HotkeyView.ProjectView],
+    [HotkeyContext.ProjectView],
     { keyup: true, enabled: true },
+    [dispatch, selectedImageIds]
+  );
+
+  useHotkeys(
+    "shift",
+    () => {
+      setShowHK(true);
+    },
+    [HotkeyContext.ProjectView],
+    { enabled: true },
     [dispatch, selectedImageIds]
   );
 
@@ -171,9 +184,11 @@ export const CategoriesList = () => {
     <>
       <List dense>
         <List dense sx={{ maxHeight: "20rem", overflowY: "scroll" }}>
-          {categories.map((category: Category) => {
+          {categories.map((category: Category, idx) => {
             return (
               <CategoryItem
+                showHK={showHK}
+                HKIndex={idx}
                 category={category}
                 key={category.id}
                 isSelected={
@@ -227,7 +242,7 @@ export const CategoriesList = () => {
         changesPermanent={true}
       />
 
-      <DialogWithAction
+      <ConfirmationDialog
         title="Delete All Categories"
         content={`Affected objects will NOT be deleted, and instead be labelled as "Unknown"`}
         onConfirm={handleRemoveAllCategories}

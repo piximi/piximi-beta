@@ -1,6 +1,6 @@
 import { AppSettingsState } from "store/types";
 import { ThemeMode } from "themes/enums";
-import { HotkeyView } from "utils/common/enums";
+import { HotkeyContext } from "utils/common/enums";
 import { AlertState } from "utils/common/types";
 
 export const selectAlertState = ({
@@ -11,11 +11,11 @@ export const selectAlertState = ({
   return applicationSettings.alertState;
 };
 
-export const selectHotkeyView = ({
+export const selectHotkeyContext = ({
   applicationSettings,
 }: {
   applicationSettings: AppSettingsState;
-}): HotkeyView => {
+}): HotkeyContext => {
   return applicationSettings.hotkeyStack.at(-1)!;
 };
 
