@@ -1,4 +1,5 @@
 export { Cellpose } from "./Cellpose";
+export { CellposeSAM } from "./CellposeSAM";
 export { StardistVHE, StardistFluo } from "./Stardist";
 export { CocoSSD } from "./CocoSSD";
 export { Glas } from "./Glas";

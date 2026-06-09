@@ -4,6 +4,7 @@ import type { LoadCB } from "utils/types";
 
 import { err, ok } from "../../utils";
 import { Cellpose } from "../Cellpose";
+import { CellposeSAM } from "../CellposeSAM";
 import { CocoSSD } from "../CocoSSD";
 import { Glas } from "../Glas";
 import { StardistFluo, StardistVHE } from "../Stardist";
@@ -27,6 +28,7 @@ export class SegmenterHandler implements ISegmenterApi {
   constructor() {
     this._availableSegmentationModels = {
       Cellpose: new Cellpose(),
+      "Cellpose-SAM": new CellposeSAM(),
       "COCO-SSD": new CocoSSD(),
       GlandSegmentation: new Glas(),
       StardistVHE: new StardistVHE(),

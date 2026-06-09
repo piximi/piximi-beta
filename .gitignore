@@ -22,6 +22,7 @@ stories
 git-sim_media
 .husky/pre-commit
 src/data/exampleProjects/*.zip
+public/ort/
 .vim
 .vimspector.json
 .cursorignore

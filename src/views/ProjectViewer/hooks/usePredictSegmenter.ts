@@ -67,6 +67,7 @@ export const usePredictSegmenter = () => {
   const predictSegmenter = useCallback(async () => {
     if (!selectedModel) return;
     const modelInfoResult = await segApi.getModelInfo(selectedModel.name);
+
     let modelDetails: SegmentaionModelDetails;
     if (modelInfoResult.success) modelDetails = modelInfoResult.data;
     else {
@@ -88,8 +89,9 @@ export const usePredictSegmenter = () => {
             `[predictSegmenter] ${loadResult.reason.code}: ${loadResult.reason.message}`,
             { cause: loadResult.reason.cause },
           ),
-          "fetch details error",
+          "load model error",
         );
+        return;
       }
     }
     const images = selectedImages.length > 0 ? selectedImages : allImages;

@@ -95,6 +95,12 @@ export class Model {
   public get modelArch() {
     return this._modelArch;
   }
+  public get defaultInputShape() {
+    return this._model?.inputs[0].shape!.slice(1) as number[];
+  }
+  public get modelLoaded() {
+    return this._model !== undefined;
+  }
 
   public setPretrained() {
     this._pretrained = true;
@@ -221,11 +227,5 @@ export class Model {
         err as Error,
       );
     }
-  }
-  public get defaultInputShape() {
-    return this._model?.inputs[0].shape!.slice(1) as number[];
-  }
-  public get modelLoaded() {
-    return this._model !== undefined;
   }
 }

@@ -3,5 +3,6 @@ allowBuilds:
   canvas: true
   core-js: true
   esbuild: true
+  protobufjs: true
   skia-canvas: true
   unrs-resolver: true
